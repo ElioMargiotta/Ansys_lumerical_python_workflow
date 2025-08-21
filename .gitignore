@@ -1,3 +1,5 @@
 ansysenv
 .env
 results
+./structure_angle_sweep
+structure.fsp

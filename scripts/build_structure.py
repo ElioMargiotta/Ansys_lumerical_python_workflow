@@ -175,7 +175,7 @@ fdtd.set("z span", 0)
 # ✅ Override settings to force spectral resolution
 fdtd.set("override global monitor settings", True)
 fdtd.set("use wavelength spacing", True)
-fdtd.set("frequency points", 10)
+fdtd.set("frequency points", 1)
 
 
 # Bottom monitor
@@ -223,7 +223,7 @@ sweep_results = {
 fdtd.addsweep()
 fdtd.setsweep("sweep", "name", "angle_sweep")
 fdtd.setsweep("angle_sweep", "type", "Ranges")
-fdtd.setsweep("angle_sweep", "number of points", 7)
+fdtd.setsweep("angle_sweep", "number of points", 30)
 fdtd.addsweepparameter("angle_sweep", sweep_param)
 fdtd.addsweepresult("angle_sweep", sweep_results)
 
