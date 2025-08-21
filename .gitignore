@@ -3,3 +3,4 @@ ansysenv
 results
 ./structure_angle_sweep
 structure.fsp
+.__pycache__
