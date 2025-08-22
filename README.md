@@ -67,16 +67,23 @@ cp .env.example .env
 ```yaml
 # Layers (bottom → top)
 layers:
-  - name: downshifters
+  - name: Layer1
     material: "1.5"       # must exist in base.fsp
     thickness: 0.1e-6
-    nd: 1.5               # used by theory (TMM); FDTD uses 'material'
 
-  - name: Anti-glare
+  - name: layer2
+    group: true           # true → two phase surface witn np
+    material: "1.6"       # matrix material
+    nanoparticle_material: "1.5"
+    thickness: 0.1e-6
+    nanoparticle:
+      radius: 5e-9
+      density: 0.1        # filling factor (50%)
+
+  - name: Layer3
     surface: true         # true → rough surface generated & imported; false → flat rectangle
     material: "1.7"
     thickness: 5e-6
-    nd: 1.7
     sigma_rms: 0.07e-6    # RMS roughness height (m)
     corr_length_x: 0.1e-6 # correlation length in x (m)
     corr_length_y: 0.1e-6 # correlation length in y (m)
@@ -252,7 +259,7 @@ Restricting the numerator to $\theta>\theta_c$ gives the **beyond-cone** fractio
 ## 11) Roughness Parameters (from YAML) and How They’re Used
 
 ```yaml
-- name: Anti-glare
+- name: Layer1
   surface: true/false
   material: "1.7"
   thickness: 5e-6
