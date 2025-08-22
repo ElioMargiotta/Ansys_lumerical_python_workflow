@@ -24,7 +24,7 @@ if __name__ == "__main__":
     run_script("scripts/build_structure.py")
 
     # Step 2: Analyze results
-    run_script("scripts/analyse_results_tmm.py")
+    run_script("scripts/analyse_results.py")
 
     total_end = time.perf_counter()
     total_elapsed = total_end - total_start

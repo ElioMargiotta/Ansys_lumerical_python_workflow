@@ -6,13 +6,11 @@ layers:
 - name: downshifters
   material: "1.5"
   thickness: 0.1e-6
-  nd: 1.5
 
 - name: Anti-glare
-  surface: true
+  surface: false
   material: "1.7"
   thickness: 5e-6
-  nd: 1.7
   sigma_rms: 0.07e-6 
   corr_length_x: 0.1e-6
   corr_length_y: 0.1e-6
@@ -21,7 +19,6 @@ layers:
 
 x_thickness: 15e-7
 z_thickness: 10e-9
-dipole_density_reference: 1e21   # [dipoles / m^3] typical value (not use)
 
 #FDTD parameters
 

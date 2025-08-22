@@ -34,6 +34,7 @@ y_prev = None
 t_prev = None
 tickness_list = []
 fmin=c* (float(params["Source"]["lambda_min"]))**(-1)  # Hz
+f=fmax=fmin # source max and min frequency are the same (monochromatic source)
 nd_list = []
 
 for i, layer in enumerate(layers):
@@ -60,7 +61,7 @@ for i, layer in enumerate(layers):
         fdtd.set("x span", float(params["x_thickness"]))
         fdtd.set("z", 0)
         fdtd.set("z span", float(params["z_thickness"]))
-        ni=fdtd.getfdtdindex(f"{layer["material"]}",fmin, fmin, fmin)  # Ensure the object is created in the FDTD model
+        ni=fdtd.getfdtdindex(f"{layer["material"]}",f, fmin, fmax)  # Ensure the object is created in the FDTD model
         nd_list.append(ni)  # Store the refractive index for this layer
     # ==============
     
@@ -104,7 +105,7 @@ for i, layer in enumerate(layers):
         fdtd.set("rotation 1",  90)              # +90 ° around x ⇒ z→y
         fdtd.set("second axis",  "z")             # Rotations-tab equivalent
         fdtd.set("rotation 2",  180)
-        ni=fdtd.getfdtdindex(f"{layer["material"]}", fmin, fmin, fmin)  # Ensure the object is created in the FDTD model
+        ni=fdtd.getfdtdindex(f"{layer["material"]}", f, fmin, fmax)  # Ensure the object is created in the FDTD model
         nd_list.append(ni)  # Store the refractive index for this layer 
             
     # Update stacking for next layer
@@ -175,7 +176,7 @@ fdtd.set("z span", 0)
 # ✅ Override settings to force spectral resolution
 fdtd.set("override global monitor settings", True)
 fdtd.set("use wavelength spacing", True)
-fdtd.set("frequency points", 1)
+fdtd.set("frequency points", 10)
 
 
 # Bottom monitor
