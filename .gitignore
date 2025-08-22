@@ -1,7 +1,6 @@
 ansysenv
 .env
 results
-./structure_angle_sweep
 structure.fsp
-.__pycache__
-.structure_angle_sweep
+__pycache__*
+structure_angle_sweep
