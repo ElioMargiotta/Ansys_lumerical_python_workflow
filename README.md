@@ -154,25 +154,25 @@ python analyse_results.py
 ## 7) What the Angle Sweep Computes (FDTD)
 
 Time-domain Maxwell (solved iteratively):
-$$
+```math
 \nabla\times \mathbf{E} = -\,\mu\,\frac{\partial \mathbf{H}}{\partial t},
 \qquad
 \nabla\times \mathbf{H} = \varepsilon\,\frac{\partial \mathbf{E}}{\partial t}.
-$$
+```
 
 Per angle, the top monitor yields the **transmittance per period**:
-$$
+```math
 T_{\mathrm{FDTD}}(\theta_1)=\frac{P_{\mathrm{top}}(\theta_1)}{P_{\mathrm{inc}}(\theta_1)},
-$$
+```
 with energy balance (when converged):
-$$
+```math
 R(\theta_1)+T(\theta_1)+A(\theta_1)=1.
-$$
+```
 
 **Escape-cone edge**:
-$$
+```math
 \theta_c \;=\; \arcsin\!\left(\frac{n_{\mathrm{exit}}}{n_{\mathrm{inc}}}\right)\approx \arcsin\!\left(\frac{1}{\Re\,n_1}\right).
-$$
+```
 
 ---
 
@@ -209,20 +209,20 @@ Tavg = 0.5 * (Ts + Tp)   # unpolarized average
 ## 9) Why Roughness Creates Post-Critical Transmission (with Bloch)
 
 Under Bloch BCs the rough top surface $y=h(x)$ is **periodized** with period $\Lambda$. Its lateral spectrum has discrete components at $k_x=mG$, with
-$$
+```math
 G=\frac{2\pi}{\Lambda}, \qquad m\in\mathbb{Z}\ \ (\text{Floquet orders}).
-$$
+```
 
 Radiation into air follows grating kinematics:
-$$
+```math
 k_{x,\mathrm{out}} \;=\; n_1 k_0 \sin\theta_1 + m\,G .
-$$
+```
 Order $m$ is **propagating** in air iff
-$$
+```math
 \bigl|k_{x,\mathrm{out}}\bigr| \le k_0
 \ \Longleftrightarrow\
 \left|\,n_1\sin\theta_1 + m\,\frac{\lambda}{\Lambda}\,\right| \le 1.
-$$
+```
 
 Therefore, several negative orders $m<0$ can open just above $\theta_c$, producing **discrete lobes** in $T(\theta_1)$ even when the specular order ($m=0$) is closed.  
 If $\sigma=0$ (perfectly flat), all $|m|\ge 1$ channels vanish → **no** post-critical transmission (FDTD ≈ TMM).
@@ -232,18 +232,18 @@ If $\sigma=0$ (perfectly flat), all $|m|\ge 1$ channels vanish → **no** post-c
 ## 10) Hemispherical Average & Beyond-Cone Metric
 
 We report a (3D-equivalent) flux-weighted average (simulation itself is 2D):
-$$
+```math
 \langle T\rangle_{\mathrm{hem}}=
 \frac{\displaystyle\int_0^{\pi/2} T(\theta)\,\cos\theta\,\sin\theta\,\mathrm{d}\theta}
      {\displaystyle\int_0^{\pi/2} \cos\theta\,\sin\theta\,\mathrm{d}\theta}.
-$$
+```
 
 Restricting the numerator to $\theta>\theta_c$ gives the **beyond-cone** fraction:
-$$
+```math
 \langle T\rangle_{\mathrm{out\_cone}}=
 \frac{\displaystyle\int_{\theta>\theta_c} T(\theta)\,\cos\theta\,\sin\theta\,\mathrm{d}\theta}
      {\displaystyle\int_0^{\pi/2} \cos\theta\,\sin\theta\,\mathrm{d}\theta}.
-$$
+```
 
 > **Normalization note (/4 factor).** Some workflows divide the metric by 4 to reflect that the model represents a **quarter** of the full hemispherical phase space (e.g., 2D symmetry, per-period normalization). Use **1** for a full-hemisphere metric; keep **/4** only if it matches your physical normalization.
 
