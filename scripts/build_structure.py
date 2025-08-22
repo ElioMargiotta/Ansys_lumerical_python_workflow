@@ -34,6 +34,7 @@ y_prev = None
 t_prev = None
 tickness_list = []
 fmin=c* (float(params["Source"]["lambda_min"]))**(-1)  # Hz
+f=fmax=fmin # source max and min frequency are the same (monochromatic source)
 nd_list = []
 
 for i, layer in enumerate(layers):
@@ -47,28 +48,57 @@ for i, layer in enumerate(layers):
         y_center = y_prev + t_prev / 2 + thickness / 2
 
     # ==============
-    # Case 1: Simple Layer (rectangle)
+    # Case 1: Group Layer (with nanoparticles)
     # ==============
-    if not layer.get("surface", False):
-        mat = layer["material"]
+    if  layer.get("group", False):
+
+    # ==============
+    # Create the group
+        fdtd.addstructuregroup()
+        fdtd.set("name", f"{name}_group")
+        
+        # --- Select the group structure ---
+        fdtd.select(f"{name}_group")
+
+        # Add matrix rectangle inside the group
         fdtd.addrect()
-        fdtd.set("name", name)
-        fdtd.set("material", mat)
+        fdtd.set("name", f"{name}_matrix")
+        fdtd.set("material", layer["material"])
         fdtd.set("y", y_center)
         fdtd.set("y span", thickness)
         fdtd.set("x", 0)
         fdtd.set("x span", float(params["x_thickness"]))
         fdtd.set("z", 0)
         fdtd.set("z span", float(params["z_thickness"]))
-        ni=fdtd.getfdtdindex(f"{layer["material"]}",fmin, fmin, fmin)  # Ensure the object is created in the FDTD model
-        nd_list.append(ni)  # Store the refractive index for this layer
-    # ==============
-    
+        fdtd.addtogroup(f"{name}_group")
+
+
+        # Compute number of nanoparticles
+        particle_radius = layer["nanoparticle"]["radius"]
+        particle_density = layer["nanoparticle"]["density"]
+        volume_layer = float(params["x_thickness"]) * float(params["z_thickness"]) * thickness
+        volume_particle = (4/3) * np.pi * float(particle_radius)**3
+        N_particles = int(particle_density * volume_layer / volume_particle)
+
+        # Add particles
+        for j in range(N_particles):
+            fdtd.addsphere()
+            fdtd.set("name", f"{name}_particle_{j}")
+            fdtd.set("material", layer["nanoparticle_material"])
+            fdtd.set("radius", float(particle_radius))
+            fdtd.set("x", (np.random.rand() - 0.5) * float(params["x_thickness"]))
+            fdtd.set("y", (np.random.rand() - 0.5) * thickness + y_center)
+            fdtd.set("z", (np.random.rand() - 0.5) * float(params["z_thickness"]))
+            fdtd.addtogroup(f"{name}_group")
+            ni1=fdtd.getfdtdindex(f"{layer["material"]}", f, fmin, fmax)  # Ensure the object is created in the FDTD model
+            ni2=fdtd.getfdtdindex(f"{layer["nanoparticle_material"]}", f, fmin, fmax)  # Ensure the object is created in the FDTD model
+            nimean= ni1 + particle_density*(ni2-ni1) # Mean refractive index for the group 
+            nd_list.append(ni)  # Store the refractive index for this layer
     
     # ==============
     # Case 2: Surface
     # ==============    
-    else: 
+    elif layer.get("surface", False): 
         x_span = float(params["x_thickness"])
         y_span = float(thickness)
         sigma_rms = float(layer["sigma_rms"])
@@ -104,7 +134,25 @@ for i, layer in enumerate(layers):
         fdtd.set("rotation 1",  90)              # +90 ° around x ⇒ z→y
         fdtd.set("second axis",  "z")             # Rotations-tab equivalent
         fdtd.set("rotation 2",  180)
-        ni=fdtd.getfdtdindex(f"{layer["material"]}", fmin, fmin, fmin)  # Ensure the object is created in the FDTD model
+        ni=fdtd.getfdtdindex(f"{layer["material"]}", f, fmin, fmax)  # Ensure the object is created in the FDTD model
+        nd_list.append(ni)  # Store the refractive index for this layer
+       
+       
+    # ==============
+    # Case 3: Simple Layer (rectangle)
+    # ============== 
+    else :
+        mat = layer["material"]
+        fdtd.addrect()
+        fdtd.set("name", name)
+        fdtd.set("material", mat)
+        fdtd.set("y", y_center)
+        fdtd.set("y span", thickness)
+        fdtd.set("x", 0)
+        fdtd.set("x span", float(params["x_thickness"]))
+        fdtd.set("z", 0)
+        fdtd.set("z span", float(params["z_thickness"]))
+        ni=fdtd.getfdtdindex(f"{layer["material"]}",f, fmin, fmax)  # Ensure the object is created in the FDTD model
         nd_list.append(ni)  # Store the refractive index for this layer 
             
     # Update stacking for next layer
@@ -223,7 +271,7 @@ sweep_results = {
 fdtd.addsweep()
 fdtd.setsweep("sweep", "name", "angle_sweep")
 fdtd.setsweep("angle_sweep", "type", "Ranges")
-fdtd.setsweep("angle_sweep", "number of points", 7)
+fdtd.setsweep("angle_sweep", "number of points", 30)
 fdtd.addsweepparameter("angle_sweep", sweep_param)
 fdtd.addsweepresult("angle_sweep", sweep_results)
 

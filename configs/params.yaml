@@ -1,28 +1,33 @@
 # Configuration file for the ansys FDTD simulation
 
-
 #Layers configuration --> materials needs to be added in the base.fsp file directly
 layers:
 
-- name: downshifters
+- name: layer1
   material: "1.5"
   thickness: 0.1e-6
-  nd: 1.5
 
-- name: Anti-glare
-  surface: true
-  material: "1.5"
-  thickness: 9e-6
-  nd: 1.5
-  sigma_rms: 0.07e-6 #
+- name: layer2
+  group: false
+  material: "1.6"
+  nanoparticle_material: "1.5"
+  thickness: 0.1e-6
+  nanoparticle:
+    radius: 5e-9
+    density: 0.1   # filling factor (50%)
+
+- name: layer3
+  surface: false
+  material: "1.7"
+  thickness: 5e-6
+  sigma_rms: 0.07e-6 
   corr_length_x: 0.1e-6
   corr_length_y: 0.1e-6
-  seed_process: 5
+  seed_process: 8
   delta: 0.005e-6
 
-x_thickness: 10e-7
+x_thickness: 15e-7
 z_thickness: 10e-9
-dipole_density_reference: 1e21   # [dipoles / m^3] typical value (not use)
 
 #FDTD parameters
 
