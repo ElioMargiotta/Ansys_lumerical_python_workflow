@@ -148,24 +148,24 @@ python scripts\analyse_results.py
 ## 7) Basic FDTD / sweep-angle theory (not exhaustive)
 
 FDTD solves the time-domain Maxwell equations (iteratively):
-$$
+```math
 \nabla\times \mathbf{E} = -\,\mu\,\frac{\partial \mathbf{H}}{\partial t},\qquad
 \nabla\times \mathbf{H} = \varepsilon\,\frac{\partial \mathbf{E}}{\partial t}.
-$$
+```
 
 Per angle, the top monitor yields the **transmittance per period**:
-$$
+```math
 T_{\mathrm{FDTD}}(\theta_1)=\frac{P_{\mathrm{top}}(\theta_1)}{P_{\mathrm{inc}}(\theta_1)},
-$$
+```
 with energy balance (when converged):
-$$
+```math
 R(\theta_1)+T(\theta_1)+A(\theta_1)=1.
-$$
+```
 
 **Escape-cone edge:**
-$$
+```math
 \theta_c = \arcsin\!\left(\frac{n_{\mathrm{exit}}}{n_{\mathrm{inc}}}\right) \approx \arcsin\!\left(\frac{1}{\Re\,n_1}\right).
-$$
+```
 
 ---
 
@@ -203,32 +203,33 @@ Tavg = 0.5 * (Ts + Tp)   # unpolarized average
 
 Fraction of the **total isotropic internal emission** (over $4\pi$) that exits through the **front** surface (air). It includes all forward directions $0\le\theta\le\pi/2$.
 
-$$
+```math
 f_{\mathrm{escape}} = \frac{1}{2}\int_0^{\pi/2} T(\theta)\,\sin\theta\,\cos\theta\,d\theta
-$$
+```
 
 - The single factor $1/2$ converts from $4\pi$ emission to one surface ($2\pi$).
 
 ### 9.2 Beyond‑cone outcoupling
 
-Same integral, but **restricted to angles above the internal critical angle** $\theta_c=\arcsin(n_{\mathrm{out}}/n_{\mathrm{in}})$. This quantifies escape due to **texture‑enabled momentum conversion** (scattering/diffraction) that circumvents total internal reflection (TIR).
+Same integral, but **restricted to angles above the internal critical angle** $ \theta_c=\arcsin(n_{\mathrm{out}}/n_{\mathrm{in}})$. This quantifies escape due to **texture‑enabled momentum conversion** (scattering/diffraction) that circumvents total internal reflection (TIR).
 
-$$
+```math
 f_{\mathrm{out\,cone}} = \frac{1}{2}\int_{\theta_c}^{\pi/2} T(\theta)\,\sin\theta\,\cos\theta\,d\theta
-$$
+```
 
 ### 9.3 In‑cone contribution
 
 The “geometric” escape inside the TIR cone (including Fresnel transmission):
 
-$$
+```math
 f_{\mathrm{in\,cone}} = \frac{1}{2}\int_{0}^{\theta_c} T(\theta)\,\sin\theta\,\cos\theta\,d\theta
-$$
+```
 
 **Additivity:**
-$$
+
+```math
 \boxed{\,f_{\mathrm{escape}} = f_{\mathrm{in\,cone}} + f_{\mathrm{out\,cone}}\,}
-$$
+```
 
 **Physical difference.** Hemispherical outcoupling measures everything that exits through the front. Beyond‑cone outcoupling isolates the portion due solely to texture/scattering/diffraction (what a flat interface would not provide).
 
@@ -239,22 +240,22 @@ In 3D, an isotropic field has constant radiance. More rays arrive at shallow pol
 ### 9.5 Truncating the sweep at 80° (robust near grazing)
 
 Data stop at $80^\circ$ (to avoid artifacts near $90^\circ$):
-$$
+```math
 f^{(\le 80^\circ)} = \frac{1}{2}\int_0^{80^\circ} T(\theta)\,\sin\theta\,\cos\theta\,d\theta.
-$$
+```
 
 The missing tail ($80^\circ\to90^\circ$) obeys a rigorous bound since $0\le T\le 1$:
-$$
+```math
 0\le\Delta\le\frac{1}{2}\int_{80^\circ}^{90^\circ}\sin\theta\,\cos\theta\,d\theta
 =\frac{1}{4}\cos^2 80^\circ
 \approx \frac{0.03015}{4}
 \approx 0.754\% \text{ absolute (of total emission).}
-$$
+```
 
 **Optional tiny tail correction** (freeze $T$ at $80^\circ$):
-$$
+```math
 \hat f = f^{(\le 80^\circ)} + \frac{1}{4}\,T(80^\circ)\,\cos^2 80^\circ.
-$$
+```
 
 Since $\cos^2 80^\circ\approx 0.03015$, this adds at most about $0.754\%$ absolute when $T(80^\circ)=1$. In most textured stacks $T(\theta>80^\circ)\approx 0$, so the correction is typically omitted.
 
@@ -333,17 +334,18 @@ outcone_tmm = (0.5 * simpson(T_tmm_frac[mask_out_tmm] *
 **Practical tips** (rule of thumb, not official limits).
 
 - Start with a surface sampling step $\Delta$ that resolves both the roughness and the fields:
-  $$
+
+```math
   \Delta \;\lesssim\; \min\!\Big\{\,L/6,\ \sigma_{\rm rms}/3,\ \lambda/(10\,n_{\max})\,\Big\}.
-  $$
-  Then decrease $\Delta$ until results change by $<\,1\text{–}2\%$.
+```
+Then decrease $\Delta$ until results change by $<\,1\text{–}2\%$.
 
 - Add a **mesh override** near the rough interface; target $\gtrsim 10$ points per wavelength in the highest-index region (tighten if phase accuracy is critical).
 
 - Check **convergence/energy balance** per angle:
-  $$
-  R(\theta)+T(\theta)+A(\theta)\;\approx\;1,
-  $$
+```math
+R(\theta)+T(\theta)+A(\theta)\;\approx\;1,
+```
   and confirm the curves are stable under further mesh/sampling refinement.
 
 - For near-grazing incidence, increase **PML thickness/strength** (and optionally add a larger air spacer) to suppress spurious reflections.
