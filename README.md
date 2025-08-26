@@ -334,17 +334,18 @@ outcone_tmm = (0.5 * simpson(T_tmm_frac[mask_out_tmm] *
 **Practical tips** (rule of thumb, not official limits).
 
 - Start with a surface sampling step $\Delta$ that resolves both the roughness and the fields:
-  ```math
+
+```math
   \Delta \;\lesssim\; \min\!\Big\{\,L/6,\ \sigma_{\rm rms}/3,\ \lambda/(10\,n_{\max})\,\Big\}.
-  ```
-  Then decrease $\Delta$ until results change by $<\,1\text{–}2\%$.
+```
+Then decrease $\Delta$ until results change by $<\,1\text{–}2\%$.
 
 - Add a **mesh override** near the rough interface; target $\gtrsim 10$ points per wavelength in the highest-index region (tighten if phase accuracy is critical).
 
 - Check **convergence/energy balance** per angle:
-  ```math
-  R(\theta)+T(\theta)+A(\theta)\;\approx\;1,
-  ```
+```math
+R(\theta)+T(\theta)+A(\theta)\;\approx\;1,
+```
   and confirm the curves are stable under further mesh/sampling refinement.
 
 - For near-grazing incidence, increase **PML thickness/strength** (and optionally add a larger air spacer) to suppress spurious reflections.
