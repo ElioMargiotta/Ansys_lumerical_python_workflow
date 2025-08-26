@@ -129,33 +129,37 @@ def _to_fraction(arr):
 
 # --- FDTD (uses the actual sweep angles 'theta') ---
 T_sim_frac = _to_fraction(transmission)
-cos_sim = np.cos(np.radians(theta))
-sin_sim = np.sin(np.radians(theta))
-den = simpson(cos_sim * sin_sim, x=theta)
-
-outcoupling_fdtd = (simpson(T_sim_frac * cos_sim * sin_sim, x=theta) / den)/4 # division by 4 beceause we simulate only quarter sphere
-
-mask_out_fdtd = theta > theta_c
-if np.any(mask_out_fdtd):
-    outcone_fdtd = (simpson(T_sim_frac[mask_out_fdtd] * cos_sim[mask_out_fdtd] * sin_sim[mask_out_fdtd],
-                           x=theta[mask_out_fdtd]) / den)/4
-else:
-    outcone_fdtd = 0.0
-
 # --- TMM/STACK (uses 'theta_th_plot') ---
 T_tmm_frac = _to_fraction(Tavg)
-cos_t = np.cos(np.radians(theta_th_plot))
-sin_t = np.sin(np.radians(theta_th_plot))
-den_t = simpson(cos_t * sin_t, x=theta_th_plot)
 
-outcoupling_tmm = (simpson(T_tmm_frac * cos_t * sin_t, x=theta_th_plot) / den_t)/4
+# angles in degrees in your arrays; build radian versions for integration
+rad = np.radians(theta)           # FDTD angles
+rad_t = np.radians(theta_th_plot) # TMM angles
+
+cos_sim = np.cos(rad);  sin_sim = np.sin(rad)
+cos_t   = np.cos(rad_t); sin_t   = np.sin(rad_t)
+
+# --- FDTD: escape fraction (one front surface) ---
+outcoupling_fdtd = 0.5 * simpson(T_sim_frac * cos_sim * sin_sim, x=rad)
+
+# beyond-cone (θ > θc). This captures scattering/diffraction-assisted escape.
+mask_out_fdtd = theta > theta_c
+outcone_fdtd = (0.5 * simpson(T_sim_frac[mask_out_fdtd] *
+                              cos_sim[mask_out_fdtd] *
+                              sin_sim[mask_out_fdtd],
+                              x=rad[mask_out_fdtd])
+               ) if np.any(mask_out_fdtd) else 0.0
+
+# --- TMM/STACK: same formulas ---
+outcoupling_tmm = 0.5 * simpson(T_tmm_frac * cos_t * sin_t, x=rad_t)
 
 mask_out_tmm = theta_th_plot > theta_c
-if np.any(mask_out_tmm):
-    outcone_tmm = (simpson(T_tmm_frac[mask_out_tmm] * cos_t[mask_out_tmm] * sin_t[mask_out_tmm],
-                          x=theta_th_plot[mask_out_tmm]) / den_t)/4
-else:
-    outcone_tmm = 0.0
+outcone_tmm = (0.5 * simpson(T_tmm_frac[mask_out_tmm] *
+                             cos_t[mask_out_tmm] *
+                             sin_t[mask_out_tmm],
+                             x=rad_t[mask_out_tmm])
+              ) if np.any(mask_out_tmm) else 0.0
+
 
 print(f"[Outcoupling] Hemispherical (cos(theta)*sin(theta)) - FDTD: {100*outcoupling_fdtd:.2f}%   TMM: {100*outcoupling_tmm:.2f}%")
 
