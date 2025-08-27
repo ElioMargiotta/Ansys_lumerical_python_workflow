@@ -5,6 +5,7 @@ import pandas as pd
 import os
 import datetime
 import yaml
+import json
 import matplotlib.animation as animation
 from scipy.ndimage import gaussian_filter1d
 from scipy.integrate import simpson
@@ -12,7 +13,7 @@ from scipy.interpolate import make_interp_spline
 from build_structure import nd_list, fmax, fmin, sweep_param, tickness_list  # Import the refractive indices and sweep parameters from the build_structure file
 from dotenv import load_dotenv
 
-    
+
 # 1) Load .env from the current working directory (or pass a path to your .env)
 load_dotenv()  # same as load_dotenv(dotenv_path=".env")
 
@@ -22,6 +23,27 @@ if LUMAPI_PATH and LUMAPI_PATH not in sys.path:
     sys.path.append(LUMAPI_PATH)
 
 import lumapi  # type: ignore
+import atexit
+
+# ----------------------------
+# Helper for JSON serialization
+# ----------------------------
+def _to_serializable(obj):
+    """Best-effort converter for numpy/scalars/complex to JSON-safe types."""
+    if isinstance(obj, (np.integer, np.floating)):
+        return obj.item()
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, complex):
+        return {"real": obj.real, "imag": obj.imag}
+    if isinstance(obj, (datetime.datetime, datetime.date)):
+        return obj.isoformat()
+    try:
+        # Fallback: attempt float conversion
+        return float(obj)
+    except Exception:
+        return str(obj)
+
 # Chargement des paramètres utilisateur
 with open("./configs/params.yaml", "r", encoding="utf-8") as f:
     params = yaml.safe_load(f)
@@ -35,8 +57,17 @@ layers = {
 fdtd = lumapi.FDTD(hide=True)
 fdtd.load("./structure.fsp")
 
+# Ensure FDTD process is closed even if an exception occurs
+
+def _cleanup():
+    try:
+        fdtd.close()
+    except Exception:
+        pass
+atexit.register(_cleanup)
+
 # ╔══════════════════════════════════════════════════════════════════════╗
-# ║                         FDTD / sweep Angle
+# ║                         FDTD / sweep Angle                            ║
 # ╚══════════════════════════════════════════════════════════════════════╝
 
 # Exécution du sweep d'angle
@@ -49,7 +80,7 @@ transmission = transmission_raw.flatten()  # [%] (may be in % or fraction depend
 
 # monotonic interpolator
 x_smooth = np.linspace(theta.min(), theta.max(), 300)
-spline = make_interp_spline(theta, transmission, k=3) #spline cubique lissé
+spline = make_interp_spline(theta, transmission, k=3) # spline cubique lissé
 y_smooth = np.clip(spline(x_smooth), 0, None)
 
 # Fraction transmise (simulation) — intégrale hémisphérique
@@ -62,9 +93,9 @@ den_sim = simpson(cos_theta_all * sin_theta_all, x=theta)  # = 0.5 si maille fin
 pourcentage_transmis = num_sim / den_sim * 100  # en %
 
 # ╔══════════════════════════════════════════════════════════════════════╗
-# ║                     Theorique analysis (TMM) / using Ansys            ║
+# ║                     Theorique analysis (TMM) / using Ansys           ║
 # ╚══════════════════════════════════════════════════════════════════════╝
-#compute theta critical angle
+# compute theta critical angle
 
 # --- robust scalar critical angle (theta_c) ---
 # n1 may come as a 0-D/1-D ndarray; extract the scalar safely
@@ -74,25 +105,29 @@ arg = np.real(1.0 / n1)
 arg = float(np.clip(arg, -1.0, 1.0))
 theta_c = float(np.degrees(np.arcsin(arg)))
 
-#construct matrix
+# construct matrix
 if fmin == fmax:
     f = np.array([fmin])  # Fréquence de la source
 else:
     f = np.linspace(fmin, fmax, 100)  # Fréquence de la source
 
-start= 0
-stop= 80
+start = 0
+stop = 80
 theta_th = np.arange(float(start), float(stop) + 1.0, 1.0)  # Angle d'incidence de 0 à 80° par pas de 1°
-tickness_list = list(tickness_list)          # (your original list)
-tickness_list.append(0.0)                     # add exit half-space thickness
+
+# (your original list)
+tickness_list = list(tickness_list)
+# add exit half-space thickness
+tickness_list.append(0.0)
+# ensure ndarray of floats
 tickness_list = np.asarray(tickness_list, dtype=float)
 nd_list = list(nd_list)
 
 # append AIR as a (1,1) complex array (physically n=1+0j)
 nd_list.append(np.array([[1+0j]], dtype=complex))
 
-nf=len(f)   # number of frequency samples
-nd=len(tickness_list)  # number of layers (including incident and exit half-spaces)
+nf = len(f)   # number of frequency samples
+nd = len(tickness_list)  # number of layers (including incident and exit half-spaces)
 
 N = np.zeros((nd, nf), dtype=complex)
 
@@ -121,6 +156,7 @@ Tavg = 0.5 * (Ts + Tp)
 # ╔══════════════════════════════════════════════════════════════════════╗
 # ║                          Outcoupling fraction                        ║
 # ╚══════════════════════════════════════════════════════════════════════╝
+
 def _to_fraction(arr):
     arr = np.asarray(arr, dtype=float)
     if np.nanmax(arr) > 1.000001:  # appears to be in %
@@ -160,9 +196,7 @@ outcone_tmm = (0.5 * simpson(T_tmm_frac[mask_out_tmm] *
                              x=rad_t[mask_out_tmm])
               ) if np.any(mask_out_tmm) else 0.0
 
-
 print(f"[Outcoupling] Hemispherical (cos(theta)*sin(theta)) - FDTD: {100*outcoupling_fdtd:.2f}%   TMM: {100*outcoupling_tmm:.2f}%")
-
 print(f"[Outcoupling] Beyond escape cone (theta > theta_c ~= {theta_c:.2f} deg) - FDTD: {100*outcone_fdtd:.2f}%   TMM: {100*outcone_tmm:.2f}%")
 
 # ╔══════════════════════════════════════════════════════════════════════╗
@@ -177,7 +211,7 @@ plt.plot(theta, transmission, "+", label="Simulation FDTD")
 plt.plot(theta_th_plot, Tavg, linestyle="-", label="T_TMM (unpolarized)")
 plt.xlabel("θ (deg)")
 plt.plot(x_smooth, y_smooth, "-", label="Spline lissée cubique")
-plt.axvline(theta_c, linestyle=":", label=r"$\theta_c$")
+plt.axvline(theta_c, linestyle=":", label="θ_c")
 plt.xlabel("θ (deg)")
 plt.ylabel("Transmittance")
 plt.title(f"T vs θ @ λ = {lam:.0e} m")
@@ -185,11 +219,18 @@ plt.grid(True)
 plt.legend()
 plt.tight_layout()
 
-# Logging résultats
+# -----------------
+# Results directories
+# -----------------
 folder_results = "./results"
 folder_plots = os.path.join(folder_results, "plots")
 os.makedirs(folder_plots, exist_ok=True)
 
+# NEW: Dedicated logs directory at project root
+folder_logs = "./logs"
+os.makedirs(folder_logs, exist_ok=True)
+
+# Save plot
 plot_path = os.path.join(folder_plots, f"{figure_label}.png")
 plt.savefig(plot_path)
 
@@ -213,8 +254,47 @@ log_df[col_tmm_out] = [100*outcone_tmm]
 
 log_df.to_csv(log_path, index=False)
 
+# ╔══════════════════════════════════════════════════════════════════════╗
+# ║                                LOGS JSON                             ║
+# ╚══════════════════════════════════════════════════════════════════════╝
+# Snapshot of configuration + key results, saved with the SAME timestamp
+json_log_path = os.path.join(folder_logs, f"{figure_label}.json")
+
+config_snapshot = {
+    "timestamp": timestamp,
+    "figure_label": figure_label,
+    "env": {"LUMAPI_PATH": LUMAPI_PATH},
+    "config_file": "./configs/params.yaml",
+    "params": params,  # full YAML parameters used
+    "sweep": {
+        "fmin": fmin,
+        "fmax": fmax,
+        "theta_start_deg": float(0),
+        "theta_stop_deg": float(80),
+        "theta_step_deg": 1.0,
+    },
+    "structure": {
+        "thickness_list": tickness_list.tolist(),
+        "n_layers": int(nd),
+        "critical_angle_deg": theta_c,
+        "wavelength_m": lam,
+    },
+    "results": {
+        "outcoupling_fdtd_percent": 100 * outcoupling_fdtd,
+        "outcoupling_tmm_percent": 100 * outcoupling_tmm,
+        "outcone_fdtd_percent": 100 * outcone_fdtd,
+        "outcone_tmm_percent": 100 * outcone_tmm,
+        "plot_path": plot_path,
+        "csv_log_path": log_path,
+    },
+}
+
+with open(json_log_path, "w", encoding="utf-8") as jf:
+    json.dump(config_snapshot, jf, ensure_ascii=False, indent=2, default=_to_serializable)
+
 # Clean up Lumerical instance
 fdtd.close()
 
 print(f"Figure enregistrée : {plot_path}")
 print(f"Log CSV mis à jour : {log_path}")
+print(f"Config snapshot JSON sauvegardé : {json_log_path}")
