@@ -104,8 +104,6 @@ Source:
   lambda_max: 5e-07
 ```
 
-**notes** :
----
 
 ## 5) Running the Pipeline
 
